@@ -1,0 +1,16 @@
+{
+  "name": "myroofhomes-suite",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @mrh/api",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "db:up": "docker compose up -d postgres redis",
+    "db:migrate": "npm run prisma:migrate -w @mrh/api",
+    "db:seed": "npm run prisma:seed -w @mrh/api"
+  },
+  "devDependencies": { "turbo": "^2.1.0" },
+  "engines": { "node": ">=20" }
+}
