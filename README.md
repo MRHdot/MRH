@@ -9,7 +9,7 @@ Modular-monolith monorepo (NestJS + Prisma + PostgreSQL) built module-by-module 
 | 01 | CRM — leads, dedup, lifecycle state machine, auto-assign, activities, site visits, deals + unit lock, SLA & hold-expiry jobs, pipeline | ✅ backend (see gaps) |
 | 02–11 | Inventory, CMS, WhatsApp, HRMS, Finance, Vault, Tasks, Partners, Client Portal, Analytics | ⏳ |
 
-CRM integrates with later modules through **ports** (`src/integrations/ports.ts`): Inventory, WhatsApp, HRMS leave, Finance invoice-lock. They are logging stubs today; each real module just replaces its provider.
+CRM integrates with later modules through **ports** (`apps/api/src/integrations/ports.ts`): Inventory, WhatsApp, HRMS leave, Finance invoice-lock. They are logging stubs today; each real module just replaces its provider.
 
 ### Known CRM gaps (next increment)
 - BullMQ site-visit reminders (3h/1h) — needs Redis + WhatsApp module; `reminderJobId` column is ready
@@ -22,10 +22,9 @@ CRM integrates with later modules through **ports** (`src/integrations/ports.ts`
 npm install
 cp .env.example apps/api/.env
 npm run db:up                         # postgres + redis
-cd apps/api
-npx prisma migrate dev --name init    # creates + applies the first migration
-npm run prisma:seed
-npm run start:dev                     # http://localhost:3000/v1/health
+npm run db:migrate                    # creates + applies pending migrations
+npm run db:seed
+npm run dev:api                       # http://localhost:3000/v1/health
 ```
 Seed logins (dev only): `admin@myroofhomes.com`, `manager@…`, `agent1@…` — password `ChangeMe123!`.
 

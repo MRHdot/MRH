@@ -22,7 +22,11 @@ model User {
   leads         Lead[]     @relation("LeadAgent")
   refreshTokens RefreshToken[]
 }
-enum UserStatus { ACTIVE INACTIVE SUSPENDED }
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
 
 model Role {
   id          String @id @default(uuid())
@@ -51,7 +55,11 @@ model Consent {
   createdAt    DateTime       @default(now())
   @@index([contactPhone, channel])
 }
-enum ConsentChannel { WHATSAPP SMS EMAIL }
+enum ConsentChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
 
 model AuditLog {
   id         String   @id @default(uuid())
@@ -131,7 +139,15 @@ enum LeadSource {
   REFERRAL
   CHANNEL_PARTNER
 }
-enum LeadStatus { NEW CONTACTED QUALIFIED SITE_VISIT_SCHEDULED NEGOTIATION BOOKED LOST }
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  SITE_VISIT_SCHEDULED
+  NEGOTIATION
+  BOOKED
+  LOST
+}
 
 model LeadActivity {
   id        String       @id @default(uuid())
@@ -144,7 +160,16 @@ model LeadActivity {
   createdAt DateTime     @default(now())
   @@index([leadId, createdAt])
 }
-enum ActivityType { CALL WHATSAPP NOTE STATUS_CHANGE EMAIL SITE_VISIT ASSIGNMENT_CHANGE DUPLICATE_MERGE }
+enum ActivityType {
+  CALL
+  WHATSAPP
+  NOTE
+  STATUS_CHANGE
+  EMAIL
+  SITE_VISIT
+  ASSIGNMENT_CHANGE
+  DUPLICATE_MERGE
+}
 
 model SiteVisit {
   id            String       @id @default(uuid())
@@ -163,8 +188,18 @@ model SiteVisit {
   @@index([agentId, scheduledAt])
   @@index([leadId])
 }
-enum VisitStatus { SCHEDULED COMPLETED NO_SHOW CANCELLED RESCHEDULED }
-enum VisitOutcome { INTERESTED NOT_INTERESTED NEEDS_FOLLOWUP }
+enum VisitStatus {
+  SCHEDULED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+  RESCHEDULED
+}
+enum VisitOutcome {
+  INTERESTED
+  NOT_INTERESTED
+  NEEDS_FOLLOWUP
+}
 
 model Deal {
   id                String    @id @default(uuid())
@@ -182,4 +217,10 @@ model Deal {
   @@index([stage])
   @@index([unitId])
 }
-enum DealStage { NEGOTIATION DOCUMENTATION TOKEN_RECEIVED BOOKED CANCELLED }
+enum DealStage {
+  NEGOTIATION
+  DOCUMENTATION
+  TOKEN_RECEIVED
+  BOOKED
+  CANCELLED
+}
