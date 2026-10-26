@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Foundations ─────────────
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  phone         String?    @unique
+  passwordHash  String
+  roleId        String
+  role          Role       @relation(fields: [roleId], references: [id])
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  leads         Lead[]     @relation("LeadAgent")
+  refreshTokens RefreshToken[]
+}
+enum UserStatus { ACTIVE INACTIVE SUSPENDED }
+
+model Role {
+  id          String @id @default(uuid())
+  name        String @unique
+  permissions Json   // string[]; ["*"] = everything
+  users       User[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model Consent {
+  id           String         @id @default(uuid())
+  contactPhone String
+  channel      ConsentChannel
+  given        Boolean
+  consentText  String
+  ipAddress    String?
+  createdAt    DateTime       @default(now())
+  @@index([contactPhone, channel])
+}
+enum ConsentChannel { WHATSAPP SMS EMAIL }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
+  @@index([entityType, entityId])
+}
+
+model Document {
+  id         String    @id @default(uuid())
+  ownerType  String
+  ownerId    String
+  docType    String
+  fileUrl    String
+  expiryDate DateTime?
+  verified   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+model Media {
+  id         String   @id @default(uuid())
+  url        String
+  altText    String?
+  type       String
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+}
+
+model SystemSetting {
+  key   String @id
+  value Json
+}
+
+// ───────────── Module 01 · CRM ─────────────
+model Lead {
+  id              String     @id @default(uuid())
+  name            String
+  phone           String
+  email           String?
+  source          LeadSource
+  status          LeadStatus @default(NEW)
+  assignedTo      String?
+  agent           User?      @relation("LeadAgent", fields: [assignedTo], references: [id], onDelete: SetNull)
+  projectInterest String?
+  budgetMin       Int?
+  budgetMax       Int?
+  duplicateOfId   String?
+  lostReason      String?
+  slaBreached     Boolean    @default(false)
+  version         Int        @default(1)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  activities      LeadActivity[]
+  siteVisits      SiteVisit[]
+  deal            Deal?
+
+  @@index([phone])
+  @@index([status, assignedTo])
+  @@index([createdAt])
+  @@index([duplicateOfId])
+}
+
+enum LeadSource {
+  PORTAL_99ACRES
+  PORTAL_HOUSING
+  PORTAL_MAGICBRICKS
+  GOOGLE_ADS
+  META_ADS
+  WEBSITE
+  WHATSAPP_INBOUND
+  WALK_IN
+  REFERRAL
+  CHANNEL_PARTNER
+}
+enum LeadStatus { NEW CONTACTED QUALIFIED SITE_VISIT_SCHEDULED NEGOTIATION BOOKED LOST }
+
+model LeadActivity {
+  id        String       @id @default(uuid())
+  leadId    String
+  lead      Lead         @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  type      ActivityType
+  notes     String?
+  metadata  Json?
+  createdBy String
+  createdAt DateTime     @default(now())
+  @@index([leadId, createdAt])
+}
+enum ActivityType { CALL WHATSAPP NOTE STATUS_CHANGE EMAIL SITE_VISIT ASSIGNMENT_CHANGE DUPLICATE_MERGE }
+
+model SiteVisit {
+  id            String       @id @default(uuid())
+  leadId        String
+  lead          Lead         @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  unitId        String?
+  scheduledAt   DateTime
+  durationMins  Int          @default(45)
+  agentId       String
+  status        VisitStatus  @default(SCHEDULED)
+  outcome       VisitOutcome?
+  feedback      String?
+  reminderJobId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  @@index([agentId, scheduledAt])
+  @@index([leadId])
+}
+enum VisitStatus { SCHEDULED COMPLETED NO_SHOW CANCELLED RESCHEDULED }
+enum VisitOutcome { INTERESTED NOT_INTERESTED NEEDS_FOLLOWUP }
+
+model Deal {
+  id                String    @id @default(uuid())
+  leadId            String    @unique
+  lead              Lead      @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  unitId            String
+  stage             DealStage @default(NEGOTIATION)
+  value             Decimal
+  commissionPercent Decimal
+  lostReason        String?
+  holdExpiresAt     DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  @@index([stage])
+  @@index([unitId])
+}
+enum DealStage { NEGOTIATION DOCUMENTATION TOKEN_RECEIVED BOOKED CANCELLED }
