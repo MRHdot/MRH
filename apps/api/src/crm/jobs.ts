@@ -18,7 +18,11 @@ export class CrmJobs {
     const minutes = typeof setting?.value === 'number' ? setting.value : 30;
     const stale = await this.prisma.lead.findMany({ where: { status: 'NEW', slaBreached: false, duplicateOfId: null, createdAt: { lt: subMinutes(new Date(), minutes) } } });
     for (const lead of stale) {
-      await this.prisma.lead.update({ where: { id: lead.id }, data: { slaBreached: true } });
+      const changed = await this.prisma.lead.updateMany({
+        where: { id: lead.id, status: 'NEW', slaBreached: false },
+        data: { slaBreached: true, version: { increment: 1 } },
+      });
+      if (!changed.count) continue;
       this.events.emit('lead.sla_breached', { leadId: lead.id, assignedTo: lead.assignedTo });
     }
     if (stale.length) this.log.warn(`${stale.length} SLA breach(es) flagged`);
@@ -27,14 +31,27 @@ export class CrmJobs {
   /** Hourly: release units whose 48h hold lapsed. Only NEGOTIATION deals are ever swept — never a token-received one. */
   @Cron('0 * * * *')
   async releaseExpiredHolds() {
-    const expired = await this.prisma.deal.findMany({ where: { stage: 'NEGOTIATION', holdExpiresAt: { lt: new Date() } } });
+    const now = new Date();
+    const expired = await this.prisma.deal.findMany({
+      where: { stage: 'NEGOTIATION', holdExpiresAt: { lt: now } },
+    });
     for (const deal of expired) {
-      await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx) => {
+        const changed = await tx.deal.updateMany({
+          where: { id: deal.id, stage: 'NEGOTIATION', holdExpiresAt: { lt: now } },
+          data: { stage: 'CANCELLED', lostReason: 'hold_expired' },
+        });
+        if (!changed.count) return { released: false, leadStatusChanged: false };
         await this.inventory.releaseUnit(tx, deal.unitId);
-        await tx.deal.update({ where: { id: deal.id }, data: { stage: 'CANCELLED', lostReason: 'hold_expired' } });
-        await this.sm.transition(tx, deal.leadId, 'QUALIFIED', 'system', { notes: 'Unit hold expired' });
+        const lead = await tx.lead.findUniqueOrThrow({ where: { id: deal.leadId } });
+        const leadStatusChanged = lead.status === 'NEGOTIATION';
+        if (leadStatusChanged) await this.sm.transition(tx, deal.leadId, 'QUALIFIED', 'system', { notes: 'Unit hold expired' });
+        return { released: true, leadStatusChanged };
       });
-      this.events.emit('deal.expired', { dealId: deal.id });
+      if (result.released) {
+        if (result.leadStatusChanged) this.events.emit('lead.status_changed', { leadId: deal.leadId, from: 'NEGOTIATION', to: 'QUALIFIED' });
+        this.events.emit('deal.expired', { dealId: deal.id });
+      }
     }
   }
 }

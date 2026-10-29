@@ -17,9 +17,11 @@ model User {
   roleId        String
   role          Role       @relation(fields: [roleId], references: [id])
   status        UserStatus @default(ACTIVE)
+  specialization String[]  @default([])
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   leads         Lead[]     @relation("LeadAgent")
+  referredLeads Lead[]    @relation("LeadReferrer")
   refreshTokens RefreshToken[]
 }
 enum UserStatus {
@@ -108,6 +110,8 @@ model Lead {
   status          LeadStatus @default(NEW)
   assignedTo      String?
   agent           User?      @relation("LeadAgent", fields: [assignedTo], references: [id], onDelete: SetNull)
+  referredBy      String?
+  referrer        User?      @relation("LeadReferrer", fields: [referredBy], references: [id], onDelete: SetNull)
   projectInterest String?
   budgetMin       Int?
   budgetMax       Int?
@@ -125,6 +129,7 @@ model Lead {
   @@index([status, assignedTo])
   @@index([createdAt])
   @@index([duplicateOfId])
+  @@index([referredBy])
 }
 
 enum LeadSource {

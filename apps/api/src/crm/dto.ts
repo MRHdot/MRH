@@ -1,6 +1,6 @@
 import { LeadSource, LeadStatus, ActivityType, DealStage, VisitOutcome, VisitStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDateString, IsEmail, IsEnum, IsInt, IsNumber, IsOptional, IsPositive, IsString, Length, Max, Min } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsPositive, IsString, Length, Max, Min } from 'class-validator';
 
 export class CreateLeadDto {
   @IsString() @Length(2, 120) name: string;
@@ -29,21 +29,44 @@ export class ChangeStatusDto {
   @IsOptional() @IsString() notes?: string;
 }
 export class AssignDto { @IsString() agentId: string; }
+export class BulkReassignDto {
+  @IsString() fromAgentId: string;
+  @IsOptional() @IsString() toAgentId?: string;
+}
 export class ReactivateDto { @IsOptional() @IsString() notes?: string; }
 
 export class ListLeadsQuery {
   @IsOptional() @IsString() status?: string;            // comma-separated
   @IsOptional() @IsString() assignedTo?: string;
   @IsOptional() @IsEnum(LeadSource) source?: LeadSource;
-  @IsOptional() @IsString() slaBreached?: string;       // "true" | "false"
+  @IsOptional() @IsIn(['true', 'false']) slaBreached?: string;
   @IsOptional() @IsString() cursor?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
 }
 export class PipelineQuery {
   @IsOptional() @IsString() agentId?: string;
   @IsOptional() @IsString() projectInterest?: string;
+  @IsOptional() @IsEnum(LeadSource) source?: LeadSource;
   @IsOptional() @IsDateString() dateFrom?: string;
   @IsOptional() @IsDateString() dateTo?: string;
+}
+
+export class ListVisitsQuery {
+  @IsOptional() @IsString() agentId?: string;
+  @IsOptional() @IsEnum(VisitStatus) status?: VisitStatus;
+  @IsOptional() @IsDateString() date?: string;
+  @IsOptional() @IsDateString() dateFrom?: string;
+  @IsOptional() @IsDateString() dateTo?: string;
+}
+
+export class LeaderboardQuery {
+  @IsOptional() @IsIn(['week', 'month', 'quarter']) period?: 'week' | 'month' | 'quarter';
+}
+
+export class ListActivitiesQuery {
+  @IsOptional() @IsEnum(ActivityType) type?: ActivityType;
+  @IsOptional() @IsString() cursor?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
 }
 
 export class CreateActivityDto {

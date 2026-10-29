@@ -6,16 +6,18 @@ Modular-monolith monorepo (NestJS + Prisma + PostgreSQL) built module-by-module 
 | # | Module | Status |
 |---|--------|--------|
 | 00 | Foundations (User/Role/Consent/AuditLog, JWT + RBAC, envelope, errors) | ✅ |
-| 01 | CRM — leads, dedup, lifecycle state machine, auto-assign, activities, site visits, deals + unit lock, SLA & hold-expiry jobs, pipeline | ✅ backend (see gaps) |
+| 01 | CRM — leads, dedup, lifecycle state machine, auto-assign, activities, site visits, deals + unit lock, SLA & hold-expiry jobs, pipeline | ✅ backend (UI pending) |
 | 02–11 | Inventory, CMS, WhatsApp, HRMS, Finance, Vault, Tasks, Partners, Client Portal, Analytics | ⏳ |
 
-CRM integrates with later modules through **ports** (`apps/api/src/integrations/ports.ts`): Inventory, WhatsApp, HRMS leave, Finance invoice-lock. They are logging stubs today; each real module just replaces its provider.
+CRM integrates with later modules through **ports** (`apps/api/src/integrations/ports.ts`): Inventory, WhatsApp, HRMS leave, Finance invoice-lock. Those integrations are logging stubs today; each real module replaces its provider. Site-visit reminders are queued in BullMQ using `REDIS_URL` and sent through the WhatsApp port.
 
-### Known CRM gaps (next increment)
-- BullMQ site-visit reminders (3h/1h) — needs Redis + WhatsApp module; `reminderJobId` column is ready
-- `POST /v1/leads/bulk-import` (CSV)  ·  `GET /v1/leaderboard` (reads Analytics' materialised table, Module 11)
-- Rate limiting on `/auth/login` and public lead intake  ·  agent specialisation matching in auto-assign
-- Admin UI / agent PWA (apps/admin, apps/web, apps/agent-pwa)
+### CRM backend status
+- CSV bulk import is limited to 5 MB / 5,000 rows, validates row-by-row through normal lead creation and returns a data-URI CSV containing failed rows.
+- `/v1/leaderboard` currently calculates from CRM records; replace this query with the Analytics materialised-statistics provider when Module 11 is available.
+- Login and public lead intake have per-process IP rate limits. Use a shared Redis-backed limiter before deploying multiple API replicas.
+- Agent specialization matching uses `User.specialization` tags; update tags through the admin/foundations workflow.
+- Channel-partner leads are recorded as referrals and their reads are row-scoped; manager offboarding can use `POST /v1/leads/reassign-agent`.
+- Admin UI / agent PWA remain unimplemented; this repository currently contains the API only.
 
 ## Run locally
 ```bash

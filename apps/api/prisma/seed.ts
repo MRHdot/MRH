@@ -3,13 +3,13 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const CRM_AGENT = ['leads.create', 'leads.read', 'leads.update', 'leads.status', 'leads.reactivate', 'leads.delete', 'activities.create', 'visits.manage', 'deals.manage', 'pipeline.read'];
+const CRM_AGENT = ['leads.create', 'leads.read', 'leads.update', 'leads.status', 'leads.reactivate', 'leads.delete', 'activities.create', 'visits.manage', 'deals.manage', 'pipeline.read', 'leaderboard.read'];
 const ROLES: Record<string, string[]> = {
   super_admin: ['*'],
-  sales_manager: [...CRM_AGENT, 'leads.assign', 'deals.extend_hold'],
+  sales_manager: [...CRM_AGENT, 'leads.assign', 'leads.bulk_import', 'deals.extend_hold'],
   sales_agent: CRM_AGENT,
   hr_manager: [], finance_manager: [], content_editor: [],
-  channel_partner: ['leads.create'],
+  channel_partner: ['leads.create', 'leads.read'],
   client: [],
 };
 

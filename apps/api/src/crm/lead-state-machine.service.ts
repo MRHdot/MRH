@@ -24,8 +24,8 @@ export class LeadStateMachineService {
     }
     this.checkGuards(lead, to, opts);
 
-    const updated = await tx.lead.update({
-      where: { id: leadId },
+    const changed = await tx.lead.updateMany({
+      where: { id: leadId, status: lead.status, version: lead.version },
       data: {
         status: to,
         version: { increment: 1 },
@@ -34,6 +34,8 @@ export class LeadStateMachineService {
         ...(to !== 'NEW' ? { slaBreached: false } : {}),
       },
     });
+    if (changed.count === 0) throw new AppError(409, 'CONFLICT', 'Lead changed while this transition was being applied; refresh and retry');
+    const updated = await tx.lead.findUniqueOrThrow({ where: { id: leadId } });
     await tx.leadActivity.create({
       data: {
         leadId, type: 'STATUS_CHANGE', notes: opts.notes, createdBy: actorId,

@@ -11,7 +11,13 @@ export class CrmListeners {
   @OnEvent('lead.created')
   async ack({ leadId, phone }: { leadId: string; phone: string }) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
-    if (lead) await this.wa.sendTemplate(phone, 'lead_acknowledgement', [lead.name]);   // UTILITY template
+    if (!lead) return;
+    const consent = await this.prisma.consent.findFirst({
+      where: { contactPhone: phone, channel: 'WHATSAPP' },
+      orderBy: { createdAt: 'desc' },
+      select: { given: true },
+    });
+    if (consent?.given) await this.wa.sendTemplate(phone, 'lead_acknowledgement', [lead.name]);
   }
   @OnEvent('lead.assigned')
   async assigned({ leadId, agentId }: { leadId: string; agentId: string }) { await this.wa.notifyUser(agentId, `New lead assigned: ${leadId}`); }

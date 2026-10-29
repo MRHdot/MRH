@@ -7,10 +7,12 @@ import { LeadStateMachineService } from './lead-state-machine.service';
 import { LeadsService } from './leads.service';
 import { CrmListeners } from './listeners';
 import { SiteVisitsService } from './site-visits.service';
+import { VisitReminderQueueService } from './visit-reminder-queue.service';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 
 @Module({
   controllers: [CrmController],
-  providers: [LeadsService, LeadStateMachineService, AssignmentService, SiteVisitsService, DealsService, CrmJobs, CrmListeners],
+  providers: [LeadsService, LeadStateMachineService, AssignmentService, SiteVisitsService, VisitReminderQueueService, DealsService, CrmJobs, CrmListeners, RateLimitGuard],
   exports: [LeadsService, DealsService],
 })
 export class CrmModule {}
