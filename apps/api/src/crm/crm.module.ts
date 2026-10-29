@@ -9,8 +9,10 @@ import { CrmListeners } from './listeners';
 import { SiteVisitsService } from './site-visits.service';
 import { VisitReminderQueueService } from './visit-reminder-queue.service';
 import { RateLimitGuard } from '../common/rate-limit.guard';
+import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
+  imports: [InventoryModule],
   controllers: [CrmController],
   providers: [LeadsService, LeadStateMachineService, AssignmentService, SiteVisitsService, VisitReminderQueueService, DealsService, CrmJobs, CrmListeners, RateLimitGuard],
   exports: [LeadsService, DealsService],

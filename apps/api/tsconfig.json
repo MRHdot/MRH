@@ -3,7 +3,7 @@
     "module": "commonjs", "target": "ES2022", "declaration": false,
     "removeComments": true, "emitDecoratorMetadata": true, "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true, "esModuleInterop": true, "sourceMap": true,
-    "outDir": "./dist", "baseUrl": "./", "incremental": true, "skipLibCheck": true,
+    "outDir": "./dist", "baseUrl": "./", "ignoreDeprecations": "5.0", "incremental": true, "skipLibCheck": true,
     "strictNullChecks": true, "noImplicitAny": false, "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*", "prisma/**/*"]

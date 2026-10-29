@@ -25,13 +25,6 @@ export abstract class InvoiceLockPort {           // Module 06 (Finance)
   abstract hasActiveInvoice(dealId: string): Promise<boolean>;
 }
 
-@Injectable() class StubInventory extends InventoryPort {
-  private log = new Logger('InventoryStub');
-  async holdUnitForDeal(_tx: Tx, unitId: string) { this.log.debug(`hold ${unitId}`); return addHours(new Date(), 48); }
-  async extendHold() {}
-  async releaseUnit(_tx: Tx, unitId: string) { this.log.debug(`release ${unitId}`); }
-  async markUnitSold(_tx: Tx, unitId: string) { this.log.debug(`sold ${unitId}`); }
-}
 @Injectable() class StubWhatsapp extends WhatsappPort {
   private log = new Logger('WhatsappStub');
   async sendTemplate(phone: string, t: string, p: string[]) { this.log.log(`template ${t} -> ${phone} ${JSON.stringify(p)}`); }
@@ -44,11 +37,10 @@ export abstract class InvoiceLockPort {           // Module 06 (Finance)
 @Global()
 @Module({
   providers: [
-    { provide: InventoryPort, useClass: StubInventory },
     { provide: WhatsappPort, useClass: StubWhatsapp },
     { provide: AgentAvailabilityPort, useClass: StubAvailability },
     { provide: InvoiceLockPort, useClass: StubInvoiceLock },
   ],
-  exports: [InventoryPort, WhatsappPort, AgentAvailabilityPort, InvoiceLockPort],
+  exports: [WhatsappPort, AgentAvailabilityPort, InvoiceLockPort],
 })
 export class IntegrationsModule {}

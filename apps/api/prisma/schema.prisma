@@ -132,6 +132,85 @@ model Lead {
   @@index([referredBy])
 }
 
+model Project {
+  id                String        @id @default(uuid())
+  name              String
+  developerName     String?
+  description       String?
+  location          String
+  locality          String
+  city              String        @default("Mumbai")
+  pincode           String?
+  latitude          Float?
+  longitude         Float?
+  reraId            String        @unique
+  reraValidTill     DateTime
+  reraAlert90Sent   Boolean       @default(false)
+  reraAlert30Sent   Boolean       @default(false)
+  reraAlert7Sent    Boolean       @default(false)
+  status            ProjectStatus @default(UPCOMING)
+  amenities         String[]
+  units             Unit[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([status])
+  @@index([locality])
+  @@index([reraValidTill])
+}
+
+enum ProjectStatus {
+  UPCOMING
+  ACTIVE
+  ON_HOLD
+  SOLD_OUT
+}
+
+model Unit {
+  id            String            @id @default(uuid())
+  projectId     String
+  project       Project           @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  unitNo        String
+  tower         String?
+  floor         Int?
+  type          String
+  areaSqft      Int
+  price         Decimal
+  status        UnitStatus        @default(AVAILABLE)
+  floorPlanUrl  String?
+  heldUntil     DateTime?
+  heldByDealId  String?
+  blockedReason String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  priceHistory  UnitPriceHistory[]
+
+  @@unique([projectId, unitNo])
+  @@index([status])
+  @@index([projectId, status])
+  @@index([heldUntil])
+}
+
+enum UnitStatus {
+  AVAILABLE
+  HELD
+  SOLD
+  BLOCKED
+}
+
+model UnitPriceHistory {
+  id        String   @id @default(uuid())
+  unitId    String
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  oldPrice  Decimal?
+  newPrice  Decimal
+  changedBy String
+  reason    String?
+  changedAt DateTime @default(now())
+
+  @@index([unitId, changedAt])
+}
+
 enum LeadSource {
   PORTAL_99ACRES
   PORTAL_HOUSING
