@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { Public } from './auth/auth.types';
 import { JwtAuthGuard, PermissionsGuard } from './auth/guards';
 import { CrmModule } from './crm/crm.module';
+import { CmsModule } from './cms/cms.module';
 import { IntegrationsModule } from './integrations/ports';
 import { InventoryModule } from './inventory/inventory.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -17,7 +18,7 @@ class HealthController { @Public() @Get() ok() { return { status: 'ok', ts: new 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), EventEmitterModule.forRoot(), ScheduleModule.forRoot(),
-    PrismaModule, AuthModule, IntegrationsModule, InventoryModule, CrmModule,
+    PrismaModule, AuthModule, IntegrationsModule, InventoryModule, CrmModule, CmsModule,
   ],
   controllers: [HealthController],
   providers: [

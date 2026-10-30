@@ -92,6 +92,10 @@ model Media {
   altText    String?
   type       String
   uploadedBy String?
+  width      Int?
+  height     Int?
+  fileSizeBytes Int?
+  variants   Json?
   createdAt  DateTime @default(now())
 }
 
@@ -307,4 +311,70 @@ enum DealStage {
   TOKEN_RECEIVED
   BOOKED
   CANCELLED
+}
+
+// ───────────── Module 03 · CMS ─────────────
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  content         Json
+  excerpt         String?
+  tags            String[]
+  metaTitle       String
+  metaDescription String
+  ogImageUrl      String?
+  status          ContentStatus @default(DRAFT)
+  authorId        String
+  version         Int           @default(1)
+  publishedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model Page {
+  id           String        @id @default(uuid())
+  title        String
+  slug         String        @unique
+  blocks       Json
+  seo          Json
+  status       ContentStatus @default(DRAFT)
+  version      Int           @default(1)
+  lastEditedBy String
+  publishedAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model ProjectSeoOverride {
+  id              String   @id @default(uuid())
+  projectId       String   @unique
+  metaTitle       String?
+  metaDescription String?
+  ogImageUrl      String?
+  noindex         Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model Redirect {
+  id         String   @id @default(uuid())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301)
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([fromPath])
 }

@@ -1,5 +1,4 @@
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
-import { addHours } from 'date-fns';
 import { Tx } from '../prisma/prisma.module';
 
 /**
@@ -24,6 +23,9 @@ export abstract class AgentAvailabilityPort {     // Module 05 (HRMS leave)
 export abstract class InvoiceLockPort {           // Module 06 (Finance)
   abstract hasActiveInvoice(dealId: string): Promise<boolean>;
 }
+export abstract class ProjectCatalogPort {        // Module 02 (Inventory)
+  abstract assertProjectExists(projectId: string): Promise<void>;
+}
 
 @Injectable() class StubWhatsapp extends WhatsappPort {
   private log = new Logger('WhatsappStub');
@@ -33,7 +35,6 @@ export abstract class InvoiceLockPort {           // Module 06 (Finance)
 }
 @Injectable() class StubAvailability extends AgentAvailabilityPort { async getUnavailableAgentIds() { return []; } }
 @Injectable() class StubInvoiceLock extends InvoiceLockPort { async hasActiveInvoice() { return false; } }
-
 @Global()
 @Module({
   providers: [
