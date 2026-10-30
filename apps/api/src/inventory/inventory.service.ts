@@ -8,6 +8,11 @@ import { PrismaService, Tx } from '../prisma/prisma.module';
 export class InventoryService extends InventoryPort {
   constructor(private prisma: PrismaService) { super(); }
 
+  async assertProjectExists(projectId: string): Promise<void> {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
+    if (!project) throw new AppError(404, 'NOT_FOUND', 'Project not found');
+  }
+
   async holdUnitForDeal(tx: Tx, unitId: string, dealId: string): Promise<Date> {
     const unit = await tx.unit.findUnique({ where: { id: unitId }, include: { project: true } });
     if (!unit) throw new AppError(404, 'NOT_FOUND', 'Unit not found');
