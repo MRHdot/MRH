@@ -2,6 +2,7 @@
   "name": "myroofhomes-suite",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "npm@10.8.2",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev:api": "npm run start:dev -w @mrh/api",
