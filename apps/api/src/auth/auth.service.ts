@@ -4,10 +4,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
+import { AppError } from '../common/errors';
 import { PrismaService } from '../prisma/prisma.module';
 import { AuthUser } from './auth.types';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
+
+type PreviewPayload = { resourceType: 'post' | 'page'; slug: string; sub: string };
 
 @Injectable()
 export class AuthService {
@@ -16,8 +19,36 @@ export class AuthService {
   verifyAccessToken(token: string): AuthUser {
     try {
       const p = this.jwt.verify(token, { secret: this.config.getOrThrow('JWT_ACCESS_SECRET') });
-      return { id: p.sub, role: p.role, permissions: p.permissions };
+      if (p.aud === 'cms-preview' || p.tokenType === 'cms_preview' || p.type === 'preview') {
+        throw new Error('Preview token is not an access token');
+      }
+      return { id: p.sub, role: p.role, permissions: p.permissions ?? [] };
     } catch { throw new UnauthorizedException('Invalid or expired token'); }
+  }
+
+  issuePreviewToken(payload: { resourceType: 'post' | 'page'; slug: string; actorId: string }) {
+    const secret = this.config.get<string>('JWT_PREVIEW_SECRET');
+    const accessSecret = this.config.getOrThrow<string>('JWT_ACCESS_SECRET');
+    if (!secret || secret === accessSecret) {
+      throw new AppError(500, 'PREVIEW_SECRET_MISCONFIGURED', 'JWT_PREVIEW_SECRET must be set and distinct from JWT_ACCESS_SECRET');
+    }
+    return this.jwt.sign(
+      { sub: payload.actorId, resourceType: payload.resourceType, slug: payload.slug, tokenType: 'cms_preview' },
+      { secret, audience: 'cms-preview', expiresIn: '30m' },
+    );
+  }
+
+  verifyPreviewToken(token: string): PreviewPayload {
+    try {
+      const secret = this.config.getOrThrow<string>('JWT_PREVIEW_SECRET');
+      const decoded = this.jwt.verify(token, { secret, audience: 'cms-preview' });
+      if (decoded.tokenType !== 'cms_preview' || !['post', 'page'].includes(decoded.resourceType) || typeof decoded.slug !== 'string' || typeof decoded.sub !== 'string') {
+        throw new Error('Invalid preview token payload');
+      }
+      return decoded as PreviewPayload;
+    } catch {
+      throw new AppError(401, 'INVALID_PREVIEW_TOKEN', 'Preview token is invalid or expired');
+    }
   }
 
   async login(email: string, password: string) {
@@ -34,7 +65,7 @@ export class AuthService {
       include: { user: { include: { role: true } } },
     });
     if (!row || row.expiresAt < new Date() || row.user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid refresh token');
-    await this.prisma.refreshToken.delete({ where: { id: row.id } }); // rotate on every use
+    await this.prisma.refreshToken.delete({ where: { id: row.id } });
     return this.issue(row.user.id, row.user.role.name, row.user.role.permissions as string[]);
   }
 
